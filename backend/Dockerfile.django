@@ -1,0 +1,8 @@
+FROM python:3.11.4
+
+WORKDIR usr/app/backend
+COPY . .
+RUN mkdir -p /usr/app/staticfiles/assets
+RUN mkdir -p /usr/app/staticfiles/bundles
+RUN pip install --no-cache-dir -r requirements.txt
+RUN python3 manage.py collectstatic --noinput

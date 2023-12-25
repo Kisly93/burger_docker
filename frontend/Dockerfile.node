@@ -1,0 +1,7 @@
+FROM node:17.6.0
+
+WORKDIR /usr/app/frontend
+COPY . .
+RUN npm install -g n
+RUN npm ci --include=dev
+RUN ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir /usr/app/staticfiles/bundles --public-url="./"

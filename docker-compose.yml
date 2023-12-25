@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 3126
+      POSTGRES_DB: new
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.node
+    volumes:
+      - staticdir:/usr/app/staticfiles
+
+  django:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.django
+    depends_on:
+      - db
+      - frontend
+    environment:
+      SECRET_KEY: ${SECRET_KEY-django-insecure-0if40nf4nf93n4}
+      DEBUG: ${DEBUG-TRUE}
+      DB_URL: ${DB_URL-postgres://postgres:3126@db:5432/new}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS-127.0.0.1,localhost,0.0.0.0}
+      YANDEX_GEOCODER_API_KEY: ${YANDEX_GEOCODER_API_KEY-acd20b98-13a4-4c3f-b43b-b9aaf7c83a14}
+      ROLLBAR_ACCESS_TOKEN: ${ROLLBAR_ACCESS_TOKEN?}
+      ROLLBAR_ENVIRONMENT: ${ROLLBAR_ENVIRONMENT?}
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8002:8000"
+    volumes:
+      - staticdir:/usr/app/staticfiles
+      - mediadir:/usr/app/media
+volumes:
+  staticdir:
+  mediadir:
+  pg_data:
+
