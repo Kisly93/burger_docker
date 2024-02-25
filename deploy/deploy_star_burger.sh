@@ -2,37 +2,25 @@
 
 set -e
 
-PROJECT_DIR=/opt/star-burger/star-burger/
+PROJECT_DIR=$(pwd)
+ENV_FILE="$PROJECT_DIR/.env"
 
-
-cd $PROJECT_DIR
-
-source .env
-
-echo "Активация виртуального окружения..."
-source venv/bin/activate
+source "$ENV_FILE"
 
 echo "Обновление кода из репозитория..."
 git pull
 
-echo "Установка Python зависимостей..."
-pip install -r requirements.txt
+echo "Пересборка Docker образов"
+docker-compose -f $PROJECT_DIR/docker-compose.yml build
 
-echo "Пересбор статики Django..."
-python3 manage.py collectstatic --noinput
+echo "Перезапуск контейнеров"
+docker-compose -f $PROJECT_DIR/docker-compose.yml down
+docker-compose -f $PROJECT_DIR/docker-compose.yml up -d
 
-echo "Накат миграций..."
-python3 manage.py migrate --noinput
+docker cp production_env_django_1:/app/staticfiles /var/www/starburger/
+docker cp production_env_frontend_1:/app/bundles/. /var/www/starburger/staticfiles
 
-echo "Установка Node.js зависимостей..."
-npm ci --dev
-
-echo "Пересбор JS-кода..."
-./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
-
-echo "Перезапуск сервисов Systemd..."
-systemctl restart starburger.service
-systemctl reload nginx.service
+systemctl reload nginx
 
 commit=`git rev-parse HEAD`
 
@@ -49,8 +37,5 @@ curl -H "X-Rollbar-Access-Token: $ROLLBAR_ACCESS_TOKEN" \
   "comment": "deploy",
   "status": "succeeded"
 }'
-
-echo "Деактивация виртуального окружения..."
-deactivate
 
 echo "Деплой завершен успешно."
