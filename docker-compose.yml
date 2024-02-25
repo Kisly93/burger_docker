@@ -4,9 +4,9 @@ services:
   db:
     image: postgres:latest
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 3126
-      POSTGRES_DB: new
+      POSTGRES_USER: ${POSTGRES_USER?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?}
+      POSTGRES_DB: ${POSTGRES_DB?}
     volumes:
       - pg_data:/var/lib/postgresql/data
 
@@ -25,14 +25,14 @@ services:
       - db
       - frontend
     environment:
-      SECRET_KEY: ${SECRET_KEY-django-insecure-0if40nf4nf93n4}
-      DEBUG: ${DEBUG-TRUE}
-      DB_URL: ${DB_URL-postgres://postgres:3126@db:5432/new}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS-127.0.0.1,localhost,0.0.0.0}
-      YANDEX_GEOCODER_API_KEY: ${YANDEX_GEOCODER_API_KEY-acd20b98-13a4-4c3f-b43b-b9aaf7c83a14}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      DB_URL: ${DB_URL}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      YANDEX_GEOCODER_API_KEY: ${YANDEX_GEOCODER_API_KEY}
       ROLLBAR_ACCESS_TOKEN: ${ROLLBAR_ACCESS_TOKEN?}
       ROLLBAR_ENVIRONMENT: ${ROLLBAR_ENVIRONMENT?}
-    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate --noinput && gunicorn -w 3 star_burger.wsgi:application --bind 0.0.0.0:8081"
     ports:
       - "8002:8000"
     volumes:
@@ -42,4 +42,3 @@ volumes:
   staticdir:
   mediadir:
   pg_data:
-
